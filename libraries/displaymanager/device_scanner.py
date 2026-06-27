@@ -34,7 +34,7 @@ async def scan_devices(timeout: float = 8.0) -> List:
     return compatible
 
 
-async def main() -> list[str]:
+async def scan_for_devices() -> list[str]:
     print("Scanning for BK-Light 32x32 displays...")
     devices = await scan_devices()
     if not devices:

@@ -1,12 +1,17 @@
 import time
 import yaml
 import requests # Not listed in requirements.txt since this is purely a devtool
+import sys
 
 from random import randint
 
 
 ip = "192.168.100.15"
 panel_id = "display1"
+
+response = requests.get(f"http://{ip}:5000/scan", headers={'X-API-Token': 'my-secret-token'})
+print(response.json())
+sys.exit()
 
 with open("config.yml", "r") as f:
     config = yaml.safe_load(f)
