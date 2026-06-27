@@ -48,7 +48,12 @@ API_TOKEN = "my-secret-token"
 loop = asyncio.new_event_loop()
 manager = DisplayManager("config.yml")
 
-manager.create_group("display1", {(0,0): 0, (1,0): 1})
+if cfg['groups'] is not None:
+    for group in cfg['groups']:
+        panels = {}
+        for panel in cfg['groups'][group]:
+            panels[tuple(cfg['groups'][group][panel])] = panel
+        manager.create_group(group, panels)
 
 
 def start_loop():

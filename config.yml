@@ -28,7 +28,11 @@ panels:
 # Structure: {groups: {<group id>: {<panel_id>: {x: <int>, y: <int>}}}}
 groups: #None #Uncomment and remove group entries to disable auto group generation (do not remove the key)
   group1:
-    0:
+    0: [0,0]
+    1: [1,0]
+  group2:
+    2: [0,0]
+    3: [1,0]
 
 # If the tool should enable the webpanel for management of the panels
 webui: True
