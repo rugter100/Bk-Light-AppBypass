@@ -4,7 +4,11 @@ import requests
 
 from random import randint
 
-response = requests.post("http://127.0.0.1:5000/write?clear=true&update=true", headers={'X-API-Token': 'my-secret-token'},
+
+ip = "192.168.100.15"
+panel_id = "1"
+
+response = requests.post(f"http://{ip}:5000/{panel_id}/write?clear=true&update=true", headers={'X-API-Token': 'my-secret-token'},
                          json={'coords': [0, 0], 'text': '987+5485=7412', 'wrap': True, 'spacing': 1})
 
 print(response.json())
@@ -12,12 +16,18 @@ time.sleep(2)
 
 count = 0
 while count <= 10:
-    response = requests.post("http://127.0.0.1:5000/fill?update=true&clear=true", headers={'X-API-Token': 'my-secret-token'},
+    response = requests.post(f"http://{ip}:5000/{panel_id}/fill?update=true&clear=true", headers={'X-API-Token': 'my-secret-token'},
                   json={'a_coords': [0, 0], 'b_coords': [randint(1, 31), randint(1, 31)], 'color': [randint(22, 255), randint(22, 255), randint(22, 255)]})
     print(response.json())
     count += 1
 
-response = requests.post("http://127.0.0.1:5000/multitool?update=true&clear=true", headers={'X-API-Token': 'my-secret-token'},
+response = requests.post(f"http://{ip}:5000/{panel_id}/fill?update=true&clear=true", headers={'X-API-Token': 'my-secret-token'},
+                         json={'a_coords': [0, 0], 'b_coords': [31, 31], 'color': [255, 255, 255]})
+print(response.json())
+
+time.sleep(2)
+
+response = requests.post(f"http://{ip}:5000/{panel_id}/multitool?update=true&clear=true", headers={'X-API-Token': 'my-secret-token'},
                   json={'write':
                             {'write1':
                                  {'coords': [0, 0], 'text': 'Text 1', 'wrap': False, 'spacing': 1},
@@ -34,5 +44,5 @@ response = requests.post("http://127.0.0.1:5000/multitool?update=true&clear=true
 
 
 time.sleep(10)
-response = requests.get("http://127.0.0.1:5000/blackout?update=true", headers={'X-API-Token': 'my-secret-token'})
+response = requests.get(f"http://{ip}:5000/{panel_id}/blackout?update=true", headers={'X-API-Token': 'my-secret-token'})
 print(response.json())

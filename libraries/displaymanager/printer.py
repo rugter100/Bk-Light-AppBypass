@@ -3,7 +3,7 @@ import io
 from PIL import Image
 import json
 
-from libraries.displaymanager.display_session import BleDisplaySession, build_frame
+from .display_session import BleDisplaySession, build_frame
 
 
 WIDTH = 32
