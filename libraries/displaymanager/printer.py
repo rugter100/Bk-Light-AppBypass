@@ -54,7 +54,7 @@ class LEDGrid:
                 self.grid[y][x] = color
 
     def draw_text(self, x, y, text, font_name='3x5', color=(255, 255, 255),
-                  bg_color=(0, 0, 0), spacing: int =1, wrap: bool =False):
+                  bg_color=(0, 0, 0), spacing=1, wrap: bool =False):
         font_data = self.fonts[font_name]
         letters = font_data["letters"]
         width, height = font_data["size"]
@@ -108,7 +108,13 @@ class Print:
             await self._session.__aexit__(None, None, None)
             self._session = None
 
-    # Good to know, minimum brightness per colour is 22
+    async def connection_status(self, reconnect: bool = False):
+        if reconnect:
+            return await self._session.ensure_connected()
+        else:
+            return await self._session.is_connected()
+
+    # Good to know, minimum brightness per color is 22
     async def send_grid(self):
         async with self._lock:
             await self.connect()

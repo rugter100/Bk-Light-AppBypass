@@ -61,11 +61,11 @@ def require_token(func):
 
 # API Endpoints
 
-@app.route("/getstatus/<type>/<panel_id>", methods=["GET"])
+@app.route("/getstatus/<panel_id>", methods=["GET"])
 @require_token
-def get_status(type, panel_id):
+def get_status(panel_id):
     # Function to return data about current connected panels and such
-    return jsonify({"success": True, 'type': type, 'panel_id': panel_id}), 200
+    return jsonify({"success": True, 'status': manager.get_status(panel_id)}), 200
 
 
 @app.route("/blackout/<panel_id>", methods=["GET"])

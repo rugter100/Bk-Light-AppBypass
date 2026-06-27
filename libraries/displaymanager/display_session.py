@@ -184,6 +184,17 @@ class BleDisplaySession:
         if not self.client or not self.client.is_connected:
             await self._connect()
 
+    async def is_connected(self) -> bool:
+        return self.client is not None and self.client.is_connected
+
+    async def ensure_connected(self) -> bool:
+        try:
+            if not self.client or not self.client.is_connected:
+                await self._connect()
+            return self.client is not None and self.client.is_connected
+        except Exception:
+            return False
+
     async def __aenter__(self) -> "BleDisplaySession":
         await self._connect()
         return self

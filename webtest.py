@@ -1,5 +1,5 @@
 import time
-
+import yaml
 import requests
 
 from random import randint
@@ -8,7 +8,17 @@ from random import randint
 ip = "192.168.100.15"
 panel_id = "display1"
 
-response = requests.post(f"http://{ip}:5000/write/{panel_id}?clear=true&update=true", headers={'X-API-Token': 'my-secret-token'},
+with open("config.yml", "r") as f:
+    config = yaml.safe_load(f)
+    for panel in config["panels"]:
+        response = requests.post(f"http://{ip}:5000/getstatus/{panel_id}",
+                                 headers={'X-API-Token': 'my-secret-token'},
+                                 json={'coords': [0, 0], 'text': '987+5485=7412', 'wrap': True, 'spacing': 1})
+
+        print(response.json())
+
+response = requests.post(f"http://{ip}:5000/write/{panel_id}?clear=true&update=true",
+                         headers={'X-API-Token': 'my-secret-token'},
                          json={'coords': [0, 0], 'text': '987+5485=7412', 'wrap': True, 'spacing': 1})
 
 print(response.json())
@@ -17,12 +27,12 @@ time.sleep(2)
 count = 0
 while count <= 10:
     response = requests.post(f"http://{ip}:5000/fill/{panel_id}?update=true&clear=true", headers={'X-API-Token': 'my-secret-token'},
-                  json={'a_coords': [0, 0], 'b_coords': [randint(1, 62), randint(1, 62)], 'color': [randint(22, 255), randint(22, 255), randint(22, 255)]})
+                  json={'a_coords': [0, 0], 'b_coords': [randint(1, 63), randint(1, 63)], 'color': [randint(22, 255), randint(22, 255), randint(22, 255)]})
     print(response.json())
     count += 1
 
 response = requests.post(f"http://{ip}:5000/fill/{panel_id}?update=true&clear=true", headers={'X-API-Token': 'my-secret-token'},
-                         json={'a_coords': [0, 0], 'b_coords': [62, 62], 'color': [255, 255, 255]})
+                         json={'a_coords': [0, 0], 'b_coords': [63, 63], 'color': [255, 255, 255]})
 print(response.json())
 
 time.sleep(2)

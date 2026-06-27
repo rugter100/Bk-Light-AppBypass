@@ -135,9 +135,9 @@ class VirtualGrid:
                             self.set_pixel(px, py, background)
 
             cursor_x += width + spacing
-
+"""
     # =====================================================
-    # IMAGE EXPORT (MATCH LEDGrid)
+    # IMAGE EXPORT (MATCH LEDGrid) Probably not needed?
     # =====================================================
     def to_image(self):
         img = Image.new("RGB", (self.w, self.h))
@@ -149,7 +149,7 @@ class VirtualGrid:
     def to_png_bytes(self):
         buf = io.BytesIO()
         self.to_image().save(buf, format="PNG")
-        return buf.getvalue()
+        return buf.getvalue()"""
 
 
 class GroupHandle:
@@ -203,8 +203,6 @@ class DisplayManager:
             key = int(key)
         except (TypeError, ValueError):
             pass
-
-        print(key)
 
         if isinstance(key, int):
             await self.displays[key].send_grid()
@@ -261,3 +259,20 @@ class DisplayManager:
         self.groups[name] = mapping
 
         self.group_handles[name] = GroupHandle(self, mapping)
+
+    def get_status(self, key):
+        try:
+            key = int(key)
+        except (TypeError, ValueError):
+            pass
+
+        if isinstance(key, int):
+            return self.displays[key].connection_status()
+
+        elif isinstance(key, str):
+            if key in self.group_handles:
+                group = self.groups[key]
+                return asyncio.gather(*(self.displays[i].connection_status() for i in group.values()))
+
+
+            raise KeyError(f"Unknown group '{key}'")
