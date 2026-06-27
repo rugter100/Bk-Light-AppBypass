@@ -112,7 +112,10 @@ class Print:
         if reconnect:
             return await self._session.ensure_connected()
         else:
-            return await self._session.is_connected()
+            if self._session is None:
+                return False
+            else:
+                return await self._session.is_connected()
 
     # Good to know, minimum brightness per color is 22
     async def send_grid(self):

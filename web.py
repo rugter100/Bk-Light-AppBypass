@@ -279,11 +279,17 @@ def multitool(panel_id):
 
     return jsonify(func_res), 200
 
+@app.route("/getgrid/<panel_id>", methods=["GET"])
+@require_token
+def get_grid(panel_id):
+    async def _get():
+        return manager[panel_id].grid.grid
+
+    return jsonify({"success": True, "grid": asyncio.run_coroutine_threadsafe(_get(), loop).result()}), 200
+
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({
-        "status": "ok"
-    })
+    return jsonify({"success": True, "status": "ok"})
 
 
 # Error Handlers
