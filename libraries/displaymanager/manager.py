@@ -48,6 +48,11 @@ class DisplayManager:
             self.displays[int(panel_id)] = Print(address)
 
     def __getitem__(self, key):
+        try:
+            key = int(key)
+        except (TypeError, ValueError):
+            pass
+
         if isinstance(key, int):
             return self.displays[key]
 
