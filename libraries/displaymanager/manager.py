@@ -9,23 +9,71 @@ PANEL_H = 32
 class VirtualGrid:
     def __init__(self, manager, group_map):
         self.manager = manager
-        self.group_map = group_map  # {(gx,gy): panel_id}
+        self.group_map = group_map
 
-    def __setitem__(self, pos, color):
-        x, y = pos
+        xs = [p[0] for p in group_map.keys()]
+        ys = [p[1] for p in group_map.keys()]
 
-        # convert global pixel → group coordinates
-        panel_x = x // PANEL_W
-        panel_y = y // PANEL_H
+        self.grid_w = (max(xs) - min(xs) + 1) * PANEL_W
+        self.grid_h = (max(ys) - min(ys) + 1) * PANEL_H
+
+        self.min_x = min(xs)
+        self.min_y = min(ys)
+
+    def _resolve(self, x, y):
+        panel_x = x // PANEL_W + self.min_x
+        panel_y = y // PANEL_H + self.min_y
 
         local_x = x % PANEL_W
         local_y = y % PANEL_H
 
         panel_id = self.group_map.get((panel_x, panel_y))
         if panel_id is None:
-            return  # outside group
+            return None, None, None
 
-        self.manager.displays[panel_id].grid[local_y][local_x] = color
+        return panel_id, local_x, local_y
+
+    def __setitem__(self, pos, color):
+        x, y = pos
+        panel_id, lx, ly = self._resolve(x, y)
+
+        if panel_id is None:
+            return
+
+        self.manager.displays[panel_id].grid[ly][lx] = color
+
+    def clear(self, color=(0, 0, 0)):
+        for y in range(self.grid_h):
+            for x in range(self.grid_w):
+                self[x, y] = color
+
+    def fill_rect(self, x1, y1, x2, y2, color):
+        x_start, x_end = sorted((x1, x2))
+        y_start, y_end = sorted((y1, y2))
+
+        for y in range(y_start, y_end + 1):
+            for x in range(x_start, x_end + 1):
+                self[x, y] = color
+
+    def draw_text(self, x, y, text, font, color=(255, 255, 255), spacing=1):
+        cursor_x = x
+
+        font_data = self.manager.fonts[font]
+        letters = font_data["letters"]
+        width, height = font_data["size"]
+
+        for char in text:
+            glyph = letters.get(char)
+            if glyph is None:
+                cursor_x += width + spacing
+                continue
+
+            for gy, row in enumerate(glyph):
+                for gx, bit in enumerate(row):
+                    if bit == "1":
+                        self[cursor_x + gx, y + gy] = color
+
+            cursor_x += width + spacing
 
 
 class GroupHandle:
