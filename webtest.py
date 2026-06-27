@@ -1,0 +1,38 @@
+import time
+
+import requests
+
+from random import randint
+
+response = requests.post("http://127.0.0.1:5000/write?clear=true&update=true", headers={'X-API-Token': 'my-secret-token'},
+                         json={'coords': [0, 0], 'text': '987+5485=7412', 'wrap': True, 'spacing': 1})
+
+print(response.json())
+time.sleep(2)
+
+count = 0
+while count <= 10:
+    response = requests.post("http://127.0.0.1:5000/fill?update=true&clear=true", headers={'X-API-Token': 'my-secret-token'},
+                  json={'a_coords': [0, 0], 'b_coords': [randint(1, 31), randint(1, 31)], 'color': [randint(22, 255), randint(22, 255), randint(22, 255)]})
+    print(response.json())
+    count += 1
+
+response = requests.post("http://127.0.0.1:5000/multitool?update=true&clear=true", headers={'X-API-Token': 'my-secret-token'},
+                  json={'write':
+                            {'write1':
+                                 {'coords': [0, 0], 'text': 'Text 1', 'wrap': False, 'spacing': 1},
+                             'write2':
+                                 {'coords': [0, 10], 'text': 'Text 1', 'wrap': True, 'spacing': 1}},
+                        'fill':
+                            {'fill1':
+                                 {'a_coords': [0, 20], 'b_coords': [10,25], 'color': [randint(22, 255), randint(22, 255), randint(22, 255)]}},
+                        'setpixel':
+                            {'setpixel1':
+                                 {'data_type': 'single', 'data': {'x': 30, 'y': 30, 'color': [255, 128, 64]}}
+                             }
+                        })
+
+
+time.sleep(10)
+response = requests.get("http://127.0.0.1:5000/blackout?update=true", headers={'X-API-Token': 'my-secret-token'})
+print(response.json())
