@@ -29,7 +29,7 @@ app = Flask(__name__)
 API_TOKEN = "my-secret-token"
 
 loop = asyncio.new_event_loop()
-display = Print("D7:9D:E8:F6:EB:5C")
+display = Print("76:B4:92:1F:4F:37")
 
 
 def start_loop():
