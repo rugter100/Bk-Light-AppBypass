@@ -1,5 +1,7 @@
 import asyncio
 import yaml
+import io
+import json
 from .printer import Print
 
 PANEL_W = 32
@@ -7,58 +9,97 @@ PANEL_H = 32
 
 
 class VirtualGrid:
-    def __init__(self, manager, group_map):
+    def __init__(self, manager, group_map, w=None, h=None):
         self.manager = manager
         self.group_map = group_map
 
-        xs = [p[0] for p in group_map.keys()]
-        ys = [p[1] for p in group_map.keys()]
+        # virtual dimensions (auto-calculated from group)
+        if w is None or h is None:
+            xs = [c[0] for c in group_map.keys()]
+            ys = [c[1] for c in group_map.keys()]
+            self.w = (max(xs) + 1) * PANEL_W
+            self.h = (max(ys) + 1) * PANEL_H
+        else:
+            self.w = w
+            self.h = h
 
-        self.grid_w = (max(xs) - min(xs) + 1) * PANEL_W
-        self.grid_h = (max(ys) - min(ys) + 1) * PANEL_H
+        # internal buffer (same structure as LEDGrid)
+        self.grid = [
+            [(0, 0, 0) for _ in range(self.w)]
+            for _ in range(self.h)
+        ]
+        with open("fonts.json", 'r') as f:
+            self.fonts = json.load(f)
 
-        self.min_x = min(xs)
-        self.min_y = min(ys)
+    # =====================================================
+    # PIXEL ACCESS (MATCH LEDGrid EXACTLY)
+    # =====================================================
+    def __getitem__(self, y):
+        return self.grid[y]
 
-    def _resolve(self, x, y):
-        panel_x = x // PANEL_W + self.min_x
-        panel_y = y // PANEL_H + self.min_y
+    def __setitem__(self, y, row):
+        self.grid[y] = row
+
+    # =====================================================
+    # CORE PIXEL SETTER (ROUTES TO PANELS)
+    # =====================================================
+    def set_pixel(self, x, y, color):
+        if not (0 <= x < self.w and 0 <= y < self.h):
+            return
+
+        self.grid[y][x] = color
+
+        panel_x = x // PANEL_W
+        panel_y = y // PANEL_H
 
         local_x = x % PANEL_W
         local_y = y % PANEL_H
 
         panel_id = self.group_map.get((panel_x, panel_y))
         if panel_id is None:
-            return None, None, None
-
-        return panel_id, local_x, local_y
-
-    def __setitem__(self, pos, color):
-        x, y = pos
-        panel_id, lx, ly = self._resolve(x, y)
-
-        if panel_id is None:
             return
 
-        self.manager.displays[panel_id].grid[ly][lx] = color
+        self.manager.displays[panel_id].grid[local_y][local_x] = color
 
+    # =====================================================
+    # CLEAR (MATCH LEDGrid)
+    # =====================================================
     def clear(self, color=(0, 0, 0)):
-        for y in range(self.grid_h):
-            for x in range(self.grid_w):
-                self[x, y] = color
+        for y in range(self.h):
+            for x in range(self.w):
+                self.set_pixel(x, y, color)
 
+    # =====================================================
+    # FILL RECT (MATCH LEDGrid)
+    # =====================================================
     def fill_rect(self, x1, y1, x2, y2, color):
         color = tuple(color)
-        x_start, x_end = sorted((x1, x2))
-        y_start, y_end = sorted((y1, y2))
+        x_start = min(x1, x2)
+        x_end = max(x1, x2)
+        y_start = min(y1, y2)
+        y_end = max(y1, y2)
 
-        for y in range(max(0, y_start), min(self.grid_h, y2 + 1)):
+        x_start = max(0, x_start)
+        y_start = max(0, y_start)
+        x_end = min(self.w - 1, x_end)
+        y_end = min(self.h - 1, y_end)
+
+        for y in range(y_start, y_end + 1):
             for x in range(x_start, x_end + 1):
-                self[x, y] = color
+                self.set_pixel(x, y, color)
 
-    def draw_text(self, x, y, text, font_name='3x5', color=(255, 255, 255), bg_color=(0, 0, 0),
-                  spacing=1, wrap=False):
-        font_data = self.manager.fonts[font_name]
+    def draw_text(
+            self,
+            x,
+            y,
+            text,
+            font_name='3x5',
+            color=(255, 255, 255),
+            spacing=1,
+            wrap=False,
+            background=None
+    ):
+        font_data = self.fonts[font_name]
         letters = font_data["letters"]
         width, height = font_data["size"]
 
@@ -68,34 +109,47 @@ class VirtualGrid:
         for char in text:
             glyph = letters.get(char)
 
-            # unknown char → skip space
+            # unknown char → treat as space
             if glyph is None:
                 cursor_x += width + spacing
                 continue
 
-            # wrap check BEFORE drawing glyph
-            if wrap and cursor_x + width > self.grid_w:
+            # wrap logic
+            if wrap and cursor_x + width > self.w:
                 cursor_x = x
                 cursor_y += height + spacing
 
-            # if not wrapping, stop rendering
-            if not wrap and cursor_x + width > self.grid_w:
+            if not wrap and cursor_x + width > self.w:
                 break
 
-            # draw glyph WITH background fill
+            # draw glyph
             for gy, row in enumerate(glyph):
                 for gx, bit in enumerate(row):
                     px = cursor_x + gx
                     py = cursor_y + gy
 
-                    # bounds check (IMPORTANT: virtual bounds, not panel bounds)
-                    if 0 <= px < self.grid_w and 0 <= py < self.grid_h:
+                    if 0 <= px < self.w and 0 <= py < self.h:
                         if bit == "1":
-                            self[px, py] = color
-                        else:
-                            self[px, py] = bg_color
+                            self.set_pixel(px, py, color)
+                        elif background is not None:
+                            self.set_pixel(px, py, background)
 
             cursor_x += width + spacing
+
+    # =====================================================
+    # IMAGE EXPORT (MATCH LEDGrid)
+    # =====================================================
+    def to_image(self):
+        img = Image.new("RGB", (self.w, self.h))
+        for y in range(self.h):
+            for x in range(self.w):
+                img.putpixel((x, y), self.grid[y][x])
+        return img
+
+    def to_png_bytes(self):
+        buf = io.BytesIO()
+        self.to_image().save(buf, format="PNG")
+        return buf.getvalue()
 
 
 class GroupHandle:
@@ -150,6 +204,8 @@ class DisplayManager:
         except (TypeError, ValueError):
             pass
 
+        print(key)
+
         if isinstance(key, int):
             await self.displays[key].send_grid()
 
@@ -165,6 +221,9 @@ class DisplayManager:
             await asyncio.gather(
                 *(self.displays[i].send_grid() for i in key)
             )
+
+    async def send_group_by_map(self, group_map):
+        await asyncio.gather(*(self.displays[i].send_grid() for i in group_map.values()))
 
     def get_group(self, name):
         return [self.displays[i] for i in self.groups[name].values()]

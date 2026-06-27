@@ -70,7 +70,7 @@ def get_status(type, panel_id):
 
 @app.route("/blackout/<panel_id>", methods=["GET"])
 @require_token
-def blackout(type, panel_id):
+def blackout(panel_id):
     async def update():
         manager[panel_id].grid.clear()
         await manager[panel_id].send_grid()
