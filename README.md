@@ -11,11 +11,36 @@
 
 </div>
 
-# BLE LED Display Toolkit
+# BLE LED Display Webinterface
 
-Utilities for driving BK-Light RGB LED matrices over Bluetooth Low Energy (command sequence from device logs). **Supported panels:** 32×32 (ACT1026) and 64×16 (ACT1025). Set `panels.tile_width` and `panels.tile_height` in `config.yaml` to match your panel; the BLE handshake supports both variants automatically.
+Web based utility for controlling BK-Light RGB LED matrices over BLE, **Supported panels:** 32×32 (ACT1026). (more support planned)
 
-Everything is now configurable through `config.yaml`, so you can define presets, multi-panel layouts, and runtime modes without touching code.
+This tool is very much WIP and the code on main or dev is very much not stable or reliable, use/try out at your own risk
+
+Currently full control of each pixel using webAPI via its endpoints: 
+ - POST `/setpixel/<panel_id>` set a pixel or multiple seperate pixels colour
+   - Json:
+   - `data_type': '<single/multi>'`
+   - Single: `'data': {'x': <int>, 'y': <int>, 'color': [<int 0-255>, <int 0-255>, <int 0-255>]}`
+   - Multi: `'data': {'<x-coord Int>': {'<y-coord Int>': [<int 0-255>, <int 0-255>, <int 0-255>]}}`
+ - POST `/fill/<panel_id>`  Fill a region between 2 coordinates
+   - Json:
+   - `{'a_coords': [<x-coord Int>, <y-coord Int>], 'b_coords': [<same as a_coords>], 'color': [<int 0-255>, <int 0-255>, <int 0-255>]}`
+ - POST `/write/<panel_id>` Write text
+   - Json:
+   - `{'coords': [<x-coord Int>, <y-coord Int>], 'text': '<Str>', Optional> 'font_name': <Str>, 'color': [<int 0-255>, <int 0-255>, <int 0-255>], 'bg_color': [<int 0-255>, <int 0-255>, <int 0-255>], 'wrap': True/False, 'spacing': <int>}`
+ - POST `/multitool/<panel_id>` Combination of setpixel, fill and write
+   - Json:
+   - `{'write': {<write objects>}, 'fill': {<fill objects>}, 'setpixel': {<setpixel objects>}, 'print_order': <order list>}`
+   - `Order List: {'<Int>': ['write', <key>], '<Int>': ['fill', <key>], '<Int>': ['write', <key>], '<Int>': ['setpixel', <key>]}` (will be sorted numerically by the server)
+ - GET `/blackout/<panel_id>` Blacks out panel
+ - GET `/getstatuis/<panel_id>` Gets status of connection, responds with bool or list of bools depending on if the id is a specific panel or a panel group
+ - GET `/get_grid/<panel_id>` Gets the entire grid list of selected panel (!Large dataset!)
+ - GET `/health` Simple check to see if webserver is online and reachable
+(Better api docs are coming)
+
+
+This project has originally been forked from https://github.com/Pupariaa/Bk-Light-AppBypass, part of this readme has been kept due to having similar requirements and debug steps. All credits for reverse engineering the bluetooth protocol go to this repo and its contributors
 
 ## Requirements
 
@@ -29,7 +54,7 @@ Everything is now configurable through `config.yaml`, so you can define presets,
   - Long ATT write support (Prepare/Execute or Write-with-response handling for fragmented payloads)
   - MTU negotiation and L2CAP fragmentation
 
-The tools assume the screen advertises as `LED_BLE_*` (BK-Light firmware). Update the MAC address in `config.yaml` (or via `BK_LIGHT_ADDRESS`) if your unit differs. For **64×16 (ACT1025)** panels use `tile_width: 64` and `tile_height: 16`; for **32×32 (ACT1026)** the default `tile_width: 32`, `tile_height: 32` is correct.
+The tools assume the screen advertises as `LED_BLE_*` (BK-Light firmware). Update the MAC address in `config.yaml` (or via `BK_LIGHT_ADDRESS`) if your unit differs.
 
 ## Acknowledgment (Windows / Python 3.13)
 
@@ -46,197 +71,35 @@ If `py -3.13` is not available, install the non–free-threaded Python 3.13 from
 
 ## Project Structure
 
-- `config.yaml` – device defaults, multi-panel layout, presets, runtime mode.
-- `config.py` – loader/validators for the configuration tree.
-- `panel_manager.py` – orchestrates single/multi-panel sessions and image slicing.
-- `display_session.py` – BLE transport: handshake, ACK tracking, brightness/rotation, auto-reconnect.
-- `production.py` – production entrypoint that reads `config.yaml` and runs the selected mode/preset.
-- Toolkit scripts (still usable standalone):
-  - `clock_display.py`
-  - `display_text.py`
-  - `send_image.py`
-  - `increment_counter.py`
-  - `identify_panels.py`
-- Legacy smoke tests: `bootstrap_demo.py`, `red_corners.py`.
+- `config.yml` – WebAPI config, panel id list and grouping
+- `web.py` – Script to run, this will load all the dependencies and start the webserver
+- `webtest.py` – Script to test your panels (adjust the python code according to your use case)
 
 ## Quick Start
 
 1. Install dependencies:
 
    ```bash
-   pip install bleak Pillow PyYAML
+   pip install bleak Pillow PyYAML flask werkzeug waitress
    ```
 
-2. Edit `config.yaml`.
+2. Edit `config.yml`.
 
-   - Single panel (32×32 default):
+  add your panel addresses to the panels and adjust network settings if needed (auto panel detect is coming)
 
-     ```yaml
-     device:
-       address: "F0:27:3C:1A:8B:C3"
-     panels:
-       list: ["F0:27:3C:1A:8B:C3"]
-     display:
-       antialias_text: true  # set to false for crisp bitmap text
-     ```
-
-   - Single 64×16 panel (ACT1025):
-
-     ```yaml
-     panels:
-       tile_width: 64
-       tile_height: 16
-       list: ["F0:27:3C:1A:8B:C3"]
-     ```
-
-   - Fonts:
-
-     Place `.ttf` / `.otf` files under `assets/fonts/` and reference them by name (extension optional):
-
-     ```yaml
-     presets:
-       clock:
-         default:
-           font: "Aldo PC"     # resolves to assets/fonts/Aldo PC.ttf
-           size: 22
-     ```
-
-   - Multi-panel:
-
-     ```yaml
-     panels:
-       tile_width: 32
-       tile_height: 32
-       layout:
-         columns: 2
-         rows: 1
-       list:
-         - name: left
-           address: "F0:27:3C:1A:8B:C3"
-           grid_x: 0
-           grid_y: 0
-         - name: right
-           address: "F0:27:3C:1A:8B:C4"
-           grid_x: 1
-           grid_y: 0
-     ```
-
-     For 64×16 panels use `tile_width: 64`, `tile_height: 16`. A bare MAC string is accepted; defaults are inferred.
-
-3. Pick the runtime mode and preset:
-
-   ```yaml
-   runtime:
-     mode: clock
-     preset: default
-     options:
-       timezone: "Europe/Paris"
-   ```
-
-   Other examples:
-
-   ```yaml
-   runtime:
-     mode: text
-     preset: marquee_left
-     options:
-       text: "WELCOME"
-       color: "#00FFAA"
-       background: "#000000"
-
-   runtime:
-     mode: image
-     preset: signage
-     options:
-       image: "assets/promo.png"
-
-   runtime:
-     mode: counter
-     preset: default
-     options:
-       start: 100
-       count: 50
-       delay: 0.5
-   ```
-
-4. Launch the production entrypoint:
-
-   ```bash
-   python scripts/production.py
-   ```
-
-   Override anything ad hoc:
-
-   ```bash
-   python scripts/production.py --mode text --text "HELLO" --option color=#00FFAA
-   ```
-
-5. Need to identify MAC ↔ panel placement or force a clean BLE reset? Run:
-
-   ```bash
-   python scripts/identify_panels.py
-   ```
-
-   (Each panel displays its index and then disconnects cleanly.)
-
-## Toolkit Scripts
-
-- `scripts/clock_display.py` – async HH:MM clock (supports 12/24h, dot flashing, themes). Exit with `Ctrl+C` so the BLE session closes cleanly and you can relaunch immediately.
-- `scripts/display_text.py` – renders text using presets (colour/background/font/spacing) or marquee scrolls.
-
-  Example scroll preset in `config.yaml`:
-
-  ```yaml
-  text:
-    marquee_left:
-      mode: scroll
-      direction: left
-      speed: 30.0
-      step: 3          # pixels moved per frame
-      gap: 32
-      size: 18
-      spacing: 2
-      offset_y: 0
-      interval: 0.04
-  ```
-
-  Launch:
-
+3. Run web.py
+  
   ```bash
-  python scripts/display_text.py "HELLO" --preset marquee_left
+  python3 web.py
   ```
+4. Access the panel
 
-- `scripts/send_image.py` – uploads any image with fit/cover/scale + rotate/mirror/invert.
-- `scripts/increment_counter.py` – numeric animation for diagnostics.
-- `scripts/identify_panels.py` – flashes digits on each configured panel.
-- `scripts/list_fonts.py`
-
-  Prints the fonts resolved from `assets/fonts/`. Bundled names and defaults:
-  - `Aldo PC`
-  - `Dolce Vita Light`
-  - `Kenyan Coffee Rg`
-  - `Kimberley Bl`
-
-  ```bash
-  python scripts/list_fonts.py [--config config.yaml]
-  ```
-
-Each script honours `--config`, `--address`, and preset overrides so you can reuse the same YAML in development or production.
-
-## Building New Effects
-
-Use Pillow to draw onto a canvas sized to `columns × rows` tiles, then:
-
-```python
-async with PanelManager(load_config()) as manager:
-    await manager.send_image(image)
-```
-
-`PanelManager` slices the image per tile and `BleDisplaySession` handles BLE writes/ACKs for each panel automatically. Sessions will auto-reconnect if a panel restarts (tunable via `reconnect_delay` / `max_retries` / `scan_timeout`).
+  Using the API endpoints you can control the panels to set data to it, which is accessible on its configured ip:port
 
 ## Attribution & License
 
-- Created by Puparia — GitHub: [Pupariaa](<https://github.com/Pupariaa>).
-- Code is open-source and contributions are welcome; open a pull request with improvements or new effects.
-- If you reuse this toolkit (or derivatives) in your own projects, credit “Puparia / <https://github.com/Pupariaa>” and link back to the original repository.
+- Communication and translation to BK-Light panel created by Puparia — GitHub: [Pupariaa](<https://github.com/Pupariaa>).
+- WebAPI and grid system created by Marijeeee — GitHub: [Marije](<https://github.com/rugter100>)
+- Code is open-source but contributions are currently closed due to the base of the code not being finished yet.
+- Originally forked from https://github.com/Pupariaa/Bk-Light-AppBypass
 - Licensed under the [MIT License](./LICENSE).
