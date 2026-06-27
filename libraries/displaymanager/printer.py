@@ -53,17 +53,8 @@ class LEDGrid:
             for x in range(max(0, x1), min(self.w, x2 + 1)):
                 self.grid[y][x] = color
 
-    def draw_text(
-            self,
-            x,
-            y,
-            text,
-            font_name='3x5',
-            color=(255, 255, 255),
-            bg_color=(0, 0, 0),
-            spacing=1,
-            wrap=False
-    ):
+    def draw_text(self, x, y, text, font_name='3x5', color=(255, 255, 255),
+                  bg_color=(0, 0, 0), spacing: int =1, wrap: bool =False):
         font_data = self.fonts[font_name]
         letters = font_data["letters"]
         width, height = font_data["size"]

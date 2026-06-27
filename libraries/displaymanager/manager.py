@@ -48,30 +48,52 @@ class VirtualGrid:
                 self[x, y] = color
 
     def fill_rect(self, x1, y1, x2, y2, color):
+        color = tuple(color)
         x_start, x_end = sorted((x1, x2))
         y_start, y_end = sorted((y1, y2))
 
-        for y in range(y_start, y_end + 1):
+        for y in range(max(0, y_start), min(self.grid_h, y2 + 1)):
             for x in range(x_start, x_end + 1):
                 self[x, y] = color
 
-    def draw_text(self, x, y, text, font, color=(255, 255, 255), spacing=1):
-        cursor_x = x
-
-        font_data = self.manager.fonts[font]
+    def draw_text(self, x, y, text, font, color=(255, 255, 255), bg_color=(0, 0, 0),
+                  spacing=1, wrap=False):
+        font_data = self.manager.fonts[font_name]
         letters = font_data["letters"]
         width, height = font_data["size"]
 
+        cursor_x = x
+        cursor_y = y
+
         for char in text:
             glyph = letters.get(char)
+
+            # unknown char → skip space
             if glyph is None:
                 cursor_x += width + spacing
                 continue
 
+            # wrap check BEFORE drawing glyph
+            if wrap and cursor_x + width > self.grid_w:
+                cursor_x = x
+                cursor_y += height + spacing
+
+            # if not wrapping, stop rendering
+            if not wrap and cursor_x + width > self.grid_w:
+                break
+
+            # draw glyph WITH background fill
             for gy, row in enumerate(glyph):
                 for gx, bit in enumerate(row):
-                    if bit == "1":
-                        self[cursor_x + gx, y + gy] = color
+                    px = cursor_x + gx
+                    py = cursor_y + gy
+
+                    # bounds check (IMPORTANT: virtual bounds, not panel bounds)
+                    if 0 <= px < self.grid_w and 0 <= py < self.grid_h:
+                        if bit == "1":
+                            self[px, py] = color
+                        else:
+                            self[px, py] = bg_color
 
             cursor_x += width + spacing
 
