@@ -11,9 +11,8 @@ panel_id = "display1"
 with open("config.yml", "r") as f:
     config = yaml.safe_load(f)
     for panel in config["panels"]:
-        response = requests.post(f"http://{ip}:5000/getstatus/{panel_id}",
-                                 headers={'X-API-Token': 'my-secret-token'},
-                                 json={'coords': [0, 0], 'text': '987+5485=7412', 'wrap': True, 'spacing': 1})
+        response = requests.get(f"http://{ip}:5000/getstatus/{panel_id}",
+                                 headers={'X-API-Token': 'my-secret-token'})
 
         print(response.json())
 

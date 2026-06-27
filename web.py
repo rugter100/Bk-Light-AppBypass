@@ -65,7 +65,12 @@ def require_token(func):
 @require_token
 def get_status(panel_id):
     # Function to return data about current connected panels and such
-    return jsonify({"success": True, 'status': manager.get_status(panel_id)}), 200
+    async def status():
+        return await manager.get_status(panel_id)
+
+    func = asyncio.run_coroutine_threadsafe(status(), loop)
+
+    return jsonify({"success": True, 'status': func.result()}), 200
 
 
 @app.route("/blackout/<panel_id>", methods=["GET"])
