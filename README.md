@@ -54,7 +54,7 @@ This project has originally been forked from https://github.com/Pupariaa/Bk-Ligh
   - Long ATT write support (Prepare/Execute or Write-with-response handling for fragmented payloads)
   - MTU negotiation and L2CAP fragmentation
 
-The tools assume the screen advertises as `LED_BLE_*` (BK-Light firmware). Update the MAC address in `config.yaml` (or via `BK_LIGHT_ADDRESS`) if your unit differs.
+The tools assume the screen advertises as `LED_BLE_*` (BK-Light firmware). Update the MAC address in `config.yml` (or via `BK_LIGHT_ADDRESS`) if your unit differs. (currently auto detection is not implemented yet)
 
 ## Acknowledgment (Windows / Python 3.13)
 
