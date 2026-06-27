@@ -15,6 +15,7 @@ from functools import wraps
 import libraries.logger as logger
 from libraries import webui
 from libraries.displaymanager.manager import DisplayManager
+import libraries.displaymanager.device_scanner as scanner
 
 with open("config.yml", "r") as f:
     cfg = yaml.safe_load(f)
@@ -338,6 +339,14 @@ def get_grid(panel_id):
         return manager[panel_id].grid.grid
 
     return jsonify({"success": True, "grid": asyncio.run_coroutine_threadsafe(_get(), loop).result()}), 200
+
+@app.route("/scan", methods=["GET"])
+@require_token
+def scan():
+    async def start_scan():
+        await scanner.scan_devices()
+    asyncio.run_coroutine_threadsafe(start_scan(), loop)
+    return jsonify({"success": True}), 200
 
 @app.route("/health", methods=["GET"])
 def health():
