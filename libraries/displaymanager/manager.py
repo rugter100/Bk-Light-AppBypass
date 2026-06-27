@@ -173,6 +173,7 @@ class DisplayManager:
 
         for panel_id, address in config["panels"].items():
             self.displays[int(panel_id)] = Print(address)
+            self.displays[int(panel_id)].connect()
 
     def __getitem__(self, key):
         try:
