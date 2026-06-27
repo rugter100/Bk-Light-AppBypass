@@ -56,7 +56,7 @@ class VirtualGrid:
             for x in range(x_start, x_end + 1):
                 self[x, y] = color
 
-    def draw_text(self, x, y, text, font, color=(255, 255, 255), bg_color=(0, 0, 0),
+    def draw_text(self, x, y, text, font_name='3x5', color=(255, 255, 255), bg_color=(0, 0, 0),
                   spacing=1, wrap=False):
         font_data = self.manager.fonts[font_name]
         letters = font_data["letters"]
@@ -103,6 +103,9 @@ class GroupHandle:
         self.manager = manager
         self.group_map = group_map
         self.grid = VirtualGrid(manager, group_map)
+
+    async def send_grid(self):
+        await self.manager.send_group_by_map(self.group_map)
 
 
 class DisplayManager:
