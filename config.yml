@@ -1,5 +1,40 @@
+# Address and port to use
+# HTTPS is currently not supported, use a reverse proxy to enable HTTPS
+bind_address: "0.0.0.0"
+bind_port: "5000"
+behind_proxy: False
+gui:
+  theme: "dark"
+  language: "EN_Int"
+
+# List of panels (THE KEY SHOULD ALWAYS BE AN INTEGER!)
+# Example: 0587: "1A:2B:3C:4D:5E:6F" <- valid, ab05: "1A:2B:3C:4D:5E:6F" <- Invalid
+# The panel id's don't need to sequentially count up but is neater
 panels:
   0: "D7:9D:E8:F6:EB:5C"
   1: "F5:FB:BB:B1:3B:1E"
   2: "76:B4:92:1F:4F:37"
   3: "F4:75:F5:54:61:0C"
+
+# List of groups to generate (THE KEY FOR THE GROUP SHOULD ALWAYS CONTAIN AT LEAST 1 CHARACTER THAT IS NOT NUMERICAL)
+# Example: _587: or Group!:  <- valid, 5705:  <- Invalid
+
+# Panel ID is taken from the panels config, the X and Y coordinate refer to the placement relative to the first panel
+# The first panel should always be at 0,0 and any subsequent panels should go 1 up every time from there.
+# The total grid always needs to resolve to a rectangle or square.
+# Examples: Valid | Valid | Valid | Invalid
+#            1 2  | 1 2 3 | 5 6 4 | 1 2 3 4
+#            3 4  |       | 2 3 0 | 5 6 7
+# Structure: {groups: {<group id>: {<panel_id>: {x: <int>, y: <int>}}}}
+groups: #None #Uncomment and remove group entries to disable auto group generation (do not remove the key)
+  group1:
+    0:
+
+# If the tool should enable the webpanel for management of the panels
+webui: True
+
+# Debug and dev tools, do not adjust in production
+debug:
+  devmode: True
+  flask_debug: True
+  verbose: True

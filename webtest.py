@@ -1,6 +1,6 @@
 import time
 import yaml
-import requests
+import requests # Not listed in requirements.txt since this is purely a devtool
 
 from random import randint
 
@@ -11,7 +11,7 @@ panel_id = "display1"
 with open("config.yml", "r") as f:
     config = yaml.safe_load(f)
     for panel in config["panels"]:
-        response = requests.get(f"http://{ip}:5000/getstatus/{panel_id}",
+        response = requests.get(f"http://{ip}:5000/getstatus/{panel}",
                                  headers={'X-API-Token': 'my-secret-token'})
 
         print(response.json())
@@ -50,6 +50,13 @@ response = requests.post(f"http://{ip}:5000/multitool/{panel_id}?update=true&cle
                                  {'data_type': 'single', 'data': {'x': 30, 'y': 30, 'color': [255, 128, 64]}}
                              }
                         })
+
+print(response.json())
+
+response = requests.get(f"http://{ip}:5000/getgrid/{panel_id}",
+                         headers={'X-API-Token': 'my-secret-token'},)
+
+print(response.json())
 
 
 time.sleep(10)

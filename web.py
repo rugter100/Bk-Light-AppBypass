@@ -3,22 +3,38 @@ import json
 import logging
 import asyncio
 import threading
+import yaml
 from importlib import reload
 
-#from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, request, render_template, abort, url_for, redirect, flash, jsonify
 from functools import wraps
 # from apscheduler.schedulers.background import BackgroundScheduler
 # from apscheduler.triggers.interval import IntervalTrigger
 
 import libraries.logger as logger
+from libraries import webui
 from libraries.displaymanager.manager import DisplayManager
+
+with open("config.yml", "r") as f:
+    cfg = yaml.safe_load(f)
 
 log = logger.fileLogger()
 log.initialize('Main')
 log.info("Logging Initialized!")
 
 app = Flask(__name__)
+
+if cfg['behind_proxy']:
+    log.info("Proxy is being taken into account!")
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
+    )
+
+if cfg['webui']:
+    log.info(f"Loading WebUI, accessible at: http://127.0.0.1:5000")
+    from libraries.webui import web_bp
+    app.register_blueprint(web_bp)
 
 # Create a scheduler instance
 # scheduler = BackgroundScheduler(daemon=True)
@@ -64,6 +80,11 @@ def require_token(func):
 @app.route("/getstatus/<panel_id>", methods=["GET"])
 @require_token
 def get_status(panel_id):
+    if cfg['behind_proxy']:
+        request_ip = request.headers.get("X-Real-IP")
+    else:
+        request_ip = request.remote_addr
+    log.info(f"Recieving {request.method} to {request.full_path} from {request_ip}:{request.environ['REMOTE_PORT']}")
     # Function to return data about current connected panels and such
     async def status():
         return await manager.get_status(panel_id)
@@ -76,6 +97,11 @@ def get_status(panel_id):
 @app.route("/blackout/<panel_id>", methods=["GET"])
 @require_token
 def blackout(panel_id):
+    if cfg['behind_proxy']:
+        request_ip = request.headers.get("X-Real-IP")
+    else:
+        request_ip = request.remote_addr
+    log.info(f"Recieving {request.method} to {request.full_path} from {request_ip}:{request.environ['REMOTE_PORT']}")
     async def update():
         manager[panel_id].grid.clear()
         await manager[panel_id].send_grid()
@@ -92,6 +118,11 @@ def blackout(panel_id):
 @app.route("/setpixel/<panel_id>", methods=["POST"])
 @require_token
 def setpixel(panel_id):
+    if cfg['behind_proxy']:
+        request_ip = request.headers.get("X-Real-IP")
+    else:
+        request_ip = request.remote_addr
+    log.info(f"Recieving {request.method} to {request.full_path} from {request_ip}:{request.environ['REMOTE_PORT']}")
     data = request.get_json()
 
     if not data:
@@ -137,6 +168,11 @@ def setpixel(panel_id):
 @app.route("/fill/<panel_id>", methods=["POST"])
 @require_token
 def fill_region(panel_id):
+    if cfg['behind_proxy']:
+        request_ip = request.headers.get("X-Real-IP")
+    else:
+        request_ip = request.remote_addr
+    log.info(f"Recieving {request.method} to {request.full_path} from {request_ip}:{request.environ['REMOTE_PORT']}")
     # Expected Dict: {'a_coords': [<int>, <int>], 'b_coords': [<int>, <int>], 'color': [<int>, <int>, <int>]}
     data = request.get_json()
 
@@ -169,6 +205,11 @@ def fill_region(panel_id):
 @app.route("/write/<panel_id>", methods=["POST"])
 @require_token
 def write(panel_id):
+    if cfg['behind_proxy']:
+        request_ip = request.headers.get("X-Real-IP")
+    else:
+        request_ip = request.remote_addr
+    log.info(f"Recieving {request.method} to {request.full_path} from {request_ip}:{request.environ['REMOTE_PORT']}")
     # Expected dict: {'coords': [10, 1], 'text': 'text goes here'}
     # Optional Keys: 'font_name': <str>, 'color': [<int>, <int>, <int>], 'bg_color': [<int>, <int>, <int>], 'spacing': <int>, 'wrap': <bool>
     data = request.get_json()
@@ -207,6 +248,11 @@ def write(panel_id):
 @app.route("/multitool/<panel_id>", methods=["POST"])
 @require_token
 def multitool(panel_id):
+    if cfg['behind_proxy']:
+        request_ip = request.headers.get("X-Real-IP")
+    else:
+        request_ip = request.remote_addr
+    log.info(f"Recieving {request.method} to {request.full_path} from {request_ip}:{request.environ['REMOTE_PORT']}")
     # Expected Dict= {'write': {<write objects>}, 'fill': {<fill objects>}, 'setpixel': {<setpixel objects>}, 'print_order': <order list>}
     # Order List: {'0': ['write', <key>], '1': ['fill', <key>], '2': ['write', <key>], '3': ['setpixel', <key>]}
     data = request.get_json()
@@ -271,6 +317,7 @@ def multitool(panel_id):
 
         if request.args.get('update') == "true":
             await manager[panel_id].send_grid()
+        return {"success": True}
 
 
     func = asyncio.run_coroutine_threadsafe(update(), loop)
@@ -282,6 +329,11 @@ def multitool(panel_id):
 @app.route("/getgrid/<panel_id>", methods=["GET"])
 @require_token
 def get_grid(panel_id):
+    if cfg['behind_proxy']:
+        request_ip = request.headers.get("X-Real-IP")
+    else:
+        request_ip = request.remote_addr
+    log.info(f"Recieving {request.method} to {request.full_path} from {request_ip}:{request.environ['REMOTE_PORT']}")
     async def _get():
         return manager[panel_id].grid.grid
 
@@ -289,6 +341,11 @@ def get_grid(panel_id):
 
 @app.route("/health", methods=["GET"])
 def health():
+    if cfg['behind_proxy']:
+        request_ip = request.headers.get("X-Real-IP")
+    else:
+        request_ip = request.remote_addr
+    log.info(f"Recieving {request.method} to {request.full_path} from {request_ip}:{request.environ['REMOTE_PORT']}")
     return jsonify({"success": True, "status": "ok"})
 
 
@@ -296,6 +353,11 @@ def health():
 
 @app.errorhandler(404)
 def not_found(e):
+    if cfg['behind_proxy']:
+        request_ip = request.headers.get("X-Real-IP")
+    else:
+        request_ip = request.remote_addr
+    log.info(f"Recieving {request.method} to {request.full_path} from {request_ip}:{request.environ['REMOTE_PORT']}")
     return jsonify({
         "success": False,
         "error": "Endpoint not found"
@@ -317,10 +379,14 @@ def internal_error(e):
         "error": "Internal server error"
     }), 500
 
+if cfg['debug']['devmode']:
+    app.run(host=cfg['bind_address'], port=cfg['bind_port'], debug=cfg['debug']['flask_debug'])
 
-# ==========================================================
-# Run
-# ==========================================================
+elif __name__ == "__main__":
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    log.info("starting Scheduler")
+
+    from waitress import serve
+
+    log.info(F"Starting server on {cfg['bind_address']}:{cfg['bind_port']}")
+    serve(app, host=cfg['bind_address'], port=cfg['bind_port'], threads=8)
