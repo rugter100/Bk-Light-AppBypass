@@ -6,14 +6,21 @@ import sys
 from random import randint
 
 
-ip = "192.168.100.15"
-panel_ids = ["display1", "display2"]
+ip = "10.245.96.219"
+panel_ids = ["group1"]
+
+#response = requests.get(f"http://{ip}:5000/scan", headers={'X-API-Token': 'my-secret-token'})
+
+#print(response.json())
+#sys.exit()
+
+time.sleep(2)
 
 for panel_id in panel_ids:
 
-    response = requests.get(f"http://{ip}:5000/scan", headers={'X-API-Token': 'my-secret-token'})
-    print(response.json())
-    sys.exit()
+    #response = requests.get(f"http://{ip}:5000/scan", headers={'X-API-Token': 'my-secret-token'})
+    #print(response.json())
+    #sys.exit()
 
     with open("config.yml", "r") as f:
         config = yaml.safe_load(f)
@@ -31,7 +38,7 @@ for panel_id in panel_ids:
     time.sleep(2)
 
     count = 0
-    while count <= 10:
+    while count <= 100:
         response = requests.post(f"http://{ip}:5000/fill/{panel_id}?update=true&clear=true", headers={'X-API-Token': 'my-secret-token'},
                       json={'a_coords': [0, 0], 'b_coords': [randint(1, 63), randint(1, 63)], 'color': [randint(22, 255), randint(22, 255), randint(22, 255)]})
         print(response.json())

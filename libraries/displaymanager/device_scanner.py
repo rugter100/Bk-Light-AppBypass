@@ -13,7 +13,7 @@ PREFIXES = ("LED_BLE_", "BK_LIGHT", "BJ_LED")
 status = {}
 
 def build_logo_png() -> bytes:
-    asset_path = Path(__file__).resolve().parents[1] / "assets" / "test_pattern_32x32.png"
+    asset_path = Path(__file__).resolve().parents[1] /"displaymanager" / "assets" / "test_pattern_32x32.png"
     image = Image.open(asset_path).convert("RGB")
     fitted = ImageOps.fit(image, (32, 32), method=Image.Resampling.LANCZOS)
     buffer = BytesIO()

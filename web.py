@@ -349,7 +349,7 @@ def get_grid(panel_id):
 @require_token
 def scan():
     async def start_scan():
-        await scanner.scan_devices()
+        await scanner.scan_for_devices()
     asyncio.run_coroutine_threadsafe(start_scan(), loop)
     return jsonify({"success": True}), 200
 
