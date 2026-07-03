@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ lang.site.title }}{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('web.static', filename='media/favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="{{ url_for('web.static', filename='styles/bootstrap.css') }}">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            overflow: visible;
+            min-height: 100vh;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        footer {
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 1em 0;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid px-3 d-flex align-items-center">
+            <div class="d-flex align-items-center">
+                <button type="submit" class="btn p-0 border-0 bg-transparent ps-1">
+                    <img src="{{ url_for('web.static', filename='media/favicon.ico') }}" width="36" height="36">
+                </button>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 ms-auto">
+
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        {{ lang.header.pages }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" style="">
+                        <li><a class="dropdown-item" href="">{{ lang.header.home }}</a></li>
+                        <li><a class="dropdown-item" href="">avalibleshifts</a></li>
+                        <li><a class="dropdown-item" href="">pastshifts</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="">settings</a></li>
+                    </ul>
+                </div>
+
+                {% if active_page != 'settings' %}
+                <form method="get" class="d-inline" action="{{ url_for('web.settings') }}">
+                {% endif %}
+                    <button class="btn p-0 border-0 bg-transparent" {% if active_page == 'settings' %}data-bs-toggle="modal" data-bs-target="#exampleModal"{% endif %}>
+                        <img src="{{ user_data.profilePicture }}"
+                             class="rounded-circle"
+                             width="36"
+                             height="36"
+                             alt="Logout">
+                    </button>
+                {% if active_page != 'settings' %}
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class=" bs-component mt-3">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    <main class="bg-dark">
+        {% block content %}
+        <!-- Content will be inserted here -->
+        {% endblock %}
+    </main>
+    <footer class="bg-body-tertiary">
+        &copy; 2026 Vamting IT ● <a href="https://discord.gg/FJXqfUm6qR">Discord</a> ● <a href="/privacy-disclaimer">{{ lang.footer.privacy_info }}</a>
+    </footer>
+</div>
+<script src="{{ url_for('web.static', filename='js/popper.min.js') }}"></script>
+<script src="{{ url_for('web.static', filename='js/bootstrap.min.js') }}"></script>
+<script src="{{ url_for('web.static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script>
+    function refreshPage() {
+        window.location.reload(); // Refresh the current page
+    }
+</script>
+</body>
+</html>

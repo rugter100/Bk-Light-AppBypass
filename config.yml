@@ -13,8 +13,6 @@ gui:
 panels:
   0: "D7:9D:E8:F6:EB:5C"
   1: "F5:FB:BB:B1:3B:1E"
-  2: "76:B4:92:1F:4F:37"
-  3: "F4:75:F5:54:61:0C"
 
 # List of groups to generate (THE KEY FOR THE GROUP SHOULD ALWAYS CONTAIN AT LEAST 1 CHARACTER THAT IS NOT NUMERICAL)
 # Example: _587: or Group!:  <- valid, 5705:  <- Invalid
@@ -30,12 +28,12 @@ groups: #None #Uncomment and remove group entries to disable auto group generati
   group1:
     0: [0,0]
     1: [1,0]
-  group2:
-    2: [0,0]
-    3: [1,0]
 
 # If the tool should enable the webpanel for management of the panels
 webui: True
+
+# If enabled it will make use of remotely connected displays instead of trying to connect with displays directly
+remote: False
 
 # Debug and dev tools, do not adjust in production
 debug:

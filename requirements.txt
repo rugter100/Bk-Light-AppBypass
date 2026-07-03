@@ -4,3 +4,4 @@ PyYAML
 flask
 werkzeug
 waitress
+flask-login

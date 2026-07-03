@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ lang.site.title }} | {{ lang.page_title.home }}{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="text-center mb-4">{{ lang.disclaimer.title }}</h2>
+    <div class="d-flex flex-wrap justify-content-center gap-4" id="shift-container">
+        <p>{{ lang.disclaimer.text.replace('>-', '').replace('\n', '<p></p>')}}</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+language_name: "English International"
+
+site:
+  title: "BK VT Manager"
+
+page_title:
+  login: "Login"
+  home: "Home"
+
+header:
+  pages: "᎒᎒᎒"
+  home: "Home"
+
+footer:
+  privacy_info: "Privacy Policy"
+
+login:
+  title: "BK Display Share"
+  code: "Friend Code"
+  connect: "Connect"
+  username: "Username"
+  password: "Password"
+  password2: "Confirm Password"
+  login: "Login"
+  success: "Successfully logged in."
+  invalid: "Wrong email and/or password."
+  not_logged_in: 'You have to be logged in to access this page.'
+  logged_out: 'You have logged out.'
+
+disclaimer:
+  title: "Privacy Policy"
+  text: ">- This is a simple GUI tool to control BK Light panels via a remote computer, SBC or microcontroller.
+  This software is not created, supported or endorsed by B.K. Light and is purely a open source hobby project.
+  This website does not collect any usage data and only saves username, password and connected devices when a account is created."
+
+home:
+  title: "Home Title"
+  panel: "Panel Manager"

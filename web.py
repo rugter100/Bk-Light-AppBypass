@@ -13,7 +13,6 @@ from functools import wraps
 # from apscheduler.triggers.interval import IntervalTrigger
 
 import libraries.logger as logger
-from libraries import webui
 from libraries.displaymanager.manager import DisplayManager
 import libraries.displaymanager.device_scanner as scanner
 
@@ -34,8 +33,14 @@ if cfg['behind_proxy']:
 
 if cfg['webui']:
     log.info(f"Loading WebUI, accessible at: http://127.0.0.1:5000")
-    from libraries.webui import web_bp
+
+    from libraries.webui.webui import web_bp
+    from libraries.webui.auth import login_manager
+
     app.register_blueprint(web_bp)
+    login_manager.init_app(app)
+    login_manager.login_view = "web.login"
+
 
 # Create a scheduler instance
 # scheduler = BackgroundScheduler(daemon=True)
@@ -80,6 +85,10 @@ def require_token(func):
 
     return wrapper
 
+@app.route("/", methods=["GET"])
+def index():
+    if cfg['webui']:
+        return redirect(url_for("web.web_index"))
 
 # API Endpoints
 
